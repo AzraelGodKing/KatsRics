@@ -1,0 +1,5 @@
+# Viewer database - contains platform IDs and balances, never publish
+viewers.json
+
+# Mod-generated backups
+Backups/

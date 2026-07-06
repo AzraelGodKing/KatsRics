@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kat's RICS Store — Item Browser</title>
+<style>
+  :root {
+    --bg: #16130f;
+    --panel: #201b15;
+    --panel2: #2a231b;
+    --border: #3d3226;
+    --text: #e8ddcb;
+    --muted: #9c8f7a;
+    --accent: #d9a334;
+    --accent2: #7fb069;
+    --danger: #c05b4d;
+    --chip: #33291d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.5 "Segoe UI", system-ui, sans-serif;
+  }
+  header {
+    background: linear-gradient(180deg, #241d14, #1a1510);
+    border-bottom: 2px solid var(--accent);
+    padding: 28px 20px 18px;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 30px;
+    letter-spacing: 1px;
+    color: var(--accent);
+    text-shadow: 0 2px 8px rgba(0,0,0,.6);
+  }
+  header p { margin: 0 0 14px; color: var(--muted); }
+  .stats {
+    display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--chip);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+  .stat b { color: var(--accent); font-size: 16px; margin-right: 4px; }
+  .howto {
+    max-width: 1100px; margin: 16px auto 0; padding: 12px 16px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    font-size: 14px; color: var(--muted); text-align: left;
+  }
+  .howto code {
+    background: var(--chip); border: 1px solid var(--border);
+    padding: 1px 6px; border-radius: 5px; color: var(--accent2); font-size: 13px;
+  }
+  .controls {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: center;
+  }
+  .controls input[type=search], .controls select {
+    background: var(--panel2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 12px; font-size: 14px; outline: none;
+  }
+  .controls input[type=search] { width: 280px; }
+  .controls input[type=search]:focus, .controls select:focus { border-color: var(--accent); }
+  .toggle {
+    display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted);
+    cursor: pointer; user-select: none;
+  }
+  .count { font-size: 13px; color: var(--muted); }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px 20px 60px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    position: sticky; top: 61px;
+    background: var(--panel2);
+    color: var(--accent);
+    text-align: left; font-size: 13px; text-transform: uppercase; letter-spacing: .5px;
+    padding: 10px 10px; border-bottom: 2px solid var(--border);
+    cursor: pointer; white-space: nowrap;
+  }
+  thead th .arrow { font-size: 11px; color: var(--muted); }
+  tbody td {
+    padding: 8px 10px; border-bottom: 1px solid #2b241b; font-size: 14px;
+    vertical-align: top;
+  }
+  tbody tr:hover { background: #241e16; }
+  .price { color: var(--accent); font-weight: 600; white-space: nowrap; text-align: right; }
+  .qty { text-align: right; color: var(--muted); }
+  .cat { color: var(--muted); font-size: 13px; white-space: nowrap; }
+  .mod { color: var(--muted); font-size: 12px; }
+  .flags { white-space: nowrap; }
+  .flag {
+    display: inline-block; font-size: 11px; font-weight: 700;
+    border-radius: 4px; padding: 1px 6px; margin-right: 3px;
+    background: var(--chip); border: 1px solid var(--border); color: var(--accent2);
+  }
+  .off {
+    color: var(--danger); font-size: 12px; font-weight: 700;
+  }
+  tr.disabled td { opacity: .45; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+  footer {
+    text-align: center; color: var(--muted); font-size: 12px; padding: 20px;
+    border-top: 1px solid var(--border);
+  }
+  footer a { color: var(--accent); }
+  @media (max-width: 700px) {
+    .hide-sm { display: none; }
+    .controls input[type=search] { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚔ Kat's RICS Store ⚔</h1>
+  <p>Everything you can buy with your coins — RimWorld Interactive Chat Services</p>
+  <div class="stats" id="stats"></div>
+  <div class="howto">
+    <b>How to buy:</b> type <code>!buy &lt;item&gt;</code> in chat (e.g. <code>!buy thrumbo</code>).
+    Items marked <span class="flag">USE</span> work with <code>!use</code>,
+    <span class="flag">EQUIP</span> with <code>!equip</code>,
+    <span class="flag">WEAR</span> with <code>!wear</code>.
+    Check your balance with <code>!bal</code>, look up prices with <code>!pricecheck &lt;item&gt;</code>.
+  </div>
+</header>
+
+<div class="controls">
+  <input type="search" id="q" placeholder="Search items… (name or defName)">
+  <select id="cat"><option value="">All categories</option></select>
+  <select id="mod"><option value="">All mods</option></select>
+  <label class="toggle"><input type="checkbox" id="enabledOnly" checked> Purchasable only</label>
+  <span class="count" id="count"></span>
+</div>
+
+<main>
+  <table>
+    <thead>
+      <tr>
+        <th data-k="1">Item <span class="arrow" id="a1"></span></th>
+        <th data-k="0" class="hide-sm">Category <span class="arrow" id="a0"></span></th>
+        <th data-k="3" style="text-align:right">Price <span class="arrow" id="a3"></span></th>
+        <th data-k="4" class="hide-sm" style="text-align:right">Max Qty <span class="arrow" id="a4"></span></th>
+        <th>Commands</th>
+        <th data-k="8" class="hide-sm">Mod <span class="arrow" id="a8"></span></th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="empty" id="empty" style="display:none">No items match your search.</div>
+</main>
+
+<footer>
+  Generated from the live store config ·
+  <a href="https://github.com/AzraelGodKing/KatsRics">source</a> ·
+  Powered by <a href="https://github.com/ekudram/-cap-RimworldInteractiveChatServices">RICS</a>
+</footer>
+
+<script src="data.js"></script>
+<script>
+// ITEMS rows: [category, name, defName, price, qtyLimit, usable, equippable, wearable, mod, enabled]
+const rowsEl = document.getElementById('rows');
+const q = document.getElementById('q');
+const catSel = document.getElementById('cat');
+const modSel = document.getElementById('mod');
+const enabledOnly = document.getElementById('enabledOnly');
+const countEl = document.getElementById('count');
+const emptyEl = document.getElementById('empty');
+
+let sortKey = 1, sortDir = 1;
+
+const cats = [...new Set(ITEMS.map(r => r[0]))].sort();
+const mods = [...new Set(ITEMS.map(r => r[8]))].sort();
+for (const c of cats) catSel.add(new Option(c, c));
+for (const m of mods) modSel.add(new Option(m, m));
+
+const enabledCount = ITEMS.filter(r => r[9]).length;
+document.getElementById('stats').innerHTML =
+  `<span class="stat"><b>${ITEMS.length.toLocaleString()}</b> items</span>` +
+  `<span class="stat"><b>${enabledCount.toLocaleString()}</b> purchasable</span>` +
+  `<span class="stat"><b>${cats.length}</b> categories</span>` +
+  `<span class="stat"><b>${mods.length}</b> mods</span>`;
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function render() {
+  const term = q.value.trim().toLowerCase();
+  const cat = catSel.value, mod = modSel.value, en = enabledOnly.checked;
+
+  let list = ITEMS.filter(r =>
+    (!en || r[9]) &&
+    (!cat || r[0] === cat) &&
+    (!mod || r[8] === mod) &&
+    (!term || r[1].toLowerCase().includes(term) || r[2].toLowerCase().includes(term))
+  );
+
+  list.sort((a, b) => {
+    const x = a[sortKey], y = b[sortKey];
+    return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * sortDir;
+  });
+
+  document.querySelectorAll('.arrow').forEach(el => el.textContent = '');
+  const ar = document.getElementById('a' + sortKey);
+  if (ar) ar.textContent = sortDir === 1 ? '▲' : '▼';
+
+  countEl.textContent = `${list.length.toLocaleString()} item${list.length === 1 ? '' : 's'}`;
+  emptyEl.style.display = list.length ? 'none' : '';
+
+  let html = '';
+  for (const r of list) {
+    const flags =
+      (r[5] ? '<span class="flag">USE</span>' : '') +
+      (r[6] ? '<span class="flag">EQUIP</span>' : '') +
+      (r[7] ? '<span class="flag">WEAR</span>' : '') +
+      (r[9] ? '' : '<span class="off">DISABLED</span>');
+    html += `<tr${r[9] ? '' : ' class="disabled"'}>` +
+      `<td><b>${esc(r[1])}</b></td>` +
+      `<td class="cat hide-sm">${esc(r[0])}</td>` +
+      `<td class="price">${r[3].toLocaleString()}</td>` +
+      `<td class="qty hide-sm">${r[4].toLocaleString()}</td>` +
+      `<td class="flags">${flags}</td>` +
+      `<td class="mod hide-sm">${esc(r[8])}</td>` +
+      '</tr>';
+  }
+  rowsEl.innerHTML = html;
+}
+
+document.querySelectorAll('thead th[data-k]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = +th.dataset.k;
+    if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = 1; }
+    render();
+  });
+});
+[q, catSel, modSel, enabledOnly].forEach(el => el.addEventListener('input', render));
+render();
+</script>
+</body>
+</html>
