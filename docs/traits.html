@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kat's RICS — Traits</title>
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem("katsrics-theme");
+      document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+    } catch (e) {
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="brand-mark">Kat's <span>RICS</span></span>
+    <span class="brand-sub">Chat coin catalog</span>
+  </a>
+  <div class="topbar-end">
+    <nav class="nav" aria-label="Primary">
+      <a href="index.html">Store</a>
+      <a href="traits.html" class="active">Traits</a>
+      <a href="events.html">Events</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="themeToggle" aria-pressed="true" aria-label="Switch to light mode">
+      <span class="theme-label">Light</span>
+    </button>
+  </div>
+</header>
+
+<section class="page-intro">
+  <h1>Traits &amp; Xenotypes</h1>
+  <p class="lede">Pawn traits and xenotype prices from the live CAP ChatInteractive config.</p>
+  <div class="meta-row" id="stats"></div>
+  <div class="hint">
+    <span class="hint-label">Commands</span>
+    <div class="hint-body" id="howto"></div>
+  </div>
+</section>
+
+<div class="tabs" role="tablist">
+  <button type="button" id="tabTraits" class="active" data-tab="traits" role="tab">Traits</button>
+  <button type="button" id="tabXenos" data-tab="xenotypes" role="tab">Xenotypes</button>
+</div>
+
+<div id="panelTraits" class="panel active">
+  <div class="controls">
+    <input type="search" id="tq" placeholder="Search traits… (name or defName)" aria-label="Search traits">
+    <select id="tmod" aria-label="Mod"><option value="">All mods</option></select>
+    <label class="toggle"><input type="checkbox" id="tAddable"> Addable only</label>
+    <label class="toggle"><input type="checkbox" id="tRemovable"> Removable only</label>
+    <label class="toggle"><input type="checkbox" id="tBypass"> Bypass limit only</label>
+    <span class="count" id="tcount"></span>
+  </div>
+  <main>
+    <div class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th data-k="0">Trait <span class="arrow" id="ta0"></span></th>
+            <th data-k="2" class="hide-sm" style="text-align:right">Degree <span class="arrow" id="ta2"></span></th>
+            <th data-k="3" style="text-align:right">Add $ <span class="arrow" id="ta3"></span></th>
+            <th data-k="4" style="text-align:right">Remove $ <span class="arrow" id="ta4"></span></th>
+            <th data-k="flags">Flags <span class="arrow" id="taflags"></span></th>
+            <th data-k="8" class="hide-sm">Mod <span class="arrow" id="ta8"></span></th>
+          </tr>
+        </thead>
+        <tbody id="trows"></tbody>
+      </table>
+      <div class="empty" id="tempty" style="display:none">No traits match your search.</div>
+    </div>
+  </main>
+</div>
+
+<div id="panelXenos" class="panel">
+  <div class="controls">
+    <input type="search" id="xq" placeholder="Search xenotypes… (race or xenotype)" aria-label="Search xenotypes">
+    <select id="xrace" aria-label="Race"><option value="">All races</option></select>
+    <label class="toggle"><input type="checkbox" id="xEnabled" checked> Enabled only</label>
+    <span class="count" id="xcount"></span>
+  </div>
+  <main>
+    <div class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th data-k="2">Xenotype <span class="arrow" id="xa2"></span></th>
+            <th data-k="0">Race <span class="arrow" id="xa0"></span></th>
+            <th data-k="3" style="text-align:right">Price <span class="arrow" id="xa3"></span></th>
+            <th data-k="enabled">Enabled <span class="arrow" id="xaenabled"></span></th>
+            <th data-k="6" class="hide-sm">Mod active <span class="arrow" id="xa6"></span></th>
+          </tr>
+        </thead>
+        <tbody id="xrows"></tbody>
+      </table>
+      <div class="empty" id="xempty" style="display:none">No xenotypes match your search.</div>
+    </div>
+  </main>
+</div>
+
+<footer>
+  Generated from Traits.json and RaceSettings.json ·
+  <a href="https://github.com/AzraelGodKing/KatsRics">source</a> ·
+  Powered by <a href="https://github.com/ekudram/-cap-RimworldInteractiveChatServices">RICS</a>
+</footer>
+
+<script src="theme.js"></script>
+<script src="traits-data.js"></script>
+<script src="xenotypes-data.js"></script>
+<script>
+// TRAITS: [name, defName, degree, addPrice, removePrice, canAdd, canRemove, bypassLimit, mod, modActive, statsJoined]
+// XENOTYPES: [raceDisplayName, raceDef, xenotype, price, xenotypeEnabled, raceEnabled, modActive]
+
+const HINTS = {
+  traits:
+    'Look up with <code>!trait &lt;name&gt;</code> or <code>!lookup trait &lt;name&gt;</code>. ' +
+    'Add <code>!addtrait &lt;trait&gt;</code> · remove <code>!removetrait &lt;trait&gt;</code> · ' +
+    'replace <code>!replacetrait &lt;old&gt; &lt;new&gt;</code>.',
+  xenotypes:
+    'List xenotypes for a race with <code>!xenotypes &lt;race&gt;</code> ' +
+    '(e.g. <code>!xenotypes human</code>). Prices apply when buying a pawn via <code>!pawn</code> / <code>!buy</code>.'
+};
+
+const howto = document.getElementById('howto');
+const trowsEl = document.getElementById('trows');
+const xrowsEl = document.getElementById('xrows');
+const tq = document.getElementById('tq');
+const tmod = document.getElementById('tmod');
+const tAddable = document.getElementById('tAddable');
+const tRemovable = document.getElementById('tRemovable');
+const tBypass = document.getElementById('tBypass');
+const tcount = document.getElementById('tcount');
+const tempty = document.getElementById('tempty');
+const xq = document.getElementById('xq');
+const xrace = document.getElementById('xrace');
+const xEnabled = document.getElementById('xEnabled');
+const xcount = document.getElementById('xcount');
+const xempty = document.getElementById('xempty');
+
+let tSortKey = 0, tSortDir = 1;
+let xSortKey = 2, xSortDir = 1;
+
+const mods = [...new Set(TRAITS.map(r => r[8]))].sort();
+for (const m of mods) tmod.add(new Option(m, m));
+
+const races = [...new Set(XENOTYPES.map(r => r[0]))].sort();
+for (const r of races) xrace.add(new Option(r, r));
+
+const addableCount = TRAITS.filter(r => r[5]).length;
+const enabledXenos = XENOTYPES.filter(r => r[4] && r[5]).length;
+document.getElementById('stats').innerHTML =
+  `<span><b>${TRAITS.length.toLocaleString()}</b> traits</span>` +
+  `<span><b>${addableCount.toLocaleString()}</b> addable</span>` +
+  `<span><b>${XENOTYPES.length.toLocaleString()}</b> xenotype prices</span>` +
+  `<span><b>${enabledXenos.toLocaleString()}</b> enabled</span>` +
+  `<span><b>${races.length}</b> races</span>`;
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function traitFlags(r) {
+  return [r[5] && 'ADD', r[6] && 'REMOVE', r[7] && 'BYPASS'].filter(Boolean).join(' ') || '';
+}
+
+function traitSortValue(r, key) {
+  if (key === 'flags') return traitFlags(r) || '~';
+  return r[key];
+}
+
+function xenoSortValue(r, key) {
+  if (key === 'enabled') return (r[4] && r[5]) ? 1 : 0;
+  return r[key];
+}
+
+function parseKey(raw) {
+  if (raw === 'flags' || raw === 'enabled') return raw;
+  return +raw;
+}
+
+function setTab(tab) {
+  const isTraits = tab !== 'xenotypes';
+  document.getElementById('panelTraits').classList.toggle('active', isTraits);
+  document.getElementById('panelXenos').classList.toggle('active', !isTraits);
+  document.getElementById('tabTraits').classList.toggle('active', isTraits);
+  document.getElementById('tabXenos').classList.toggle('active', !isTraits);
+  howto.innerHTML = HINTS[isTraits ? 'traits' : 'xenotypes'];
+  const hash = isTraits ? '#traits' : '#xenotypes';
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+
+function renderTraits() {
+  const term = tq.value.trim().toLowerCase();
+  const mod = tmod.value;
+
+  let list = TRAITS.filter(r =>
+    (!mod || r[8] === mod) &&
+    (!tAddable.checked || r[5]) &&
+    (!tRemovable.checked || r[6]) &&
+    (!tBypass.checked || r[7]) &&
+    (!term || r[0].toLowerCase().includes(term) || r[1].toLowerCase().includes(term))
+  );
+
+  list.sort((a, b) => {
+    const x = traitSortValue(a, tSortKey), y = traitSortValue(b, tSortKey);
+    return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * tSortDir;
+  });
+
+  document.querySelectorAll('#panelTraits .arrow').forEach(el => el.textContent = '');
+  const ar = document.getElementById('ta' + tSortKey);
+  if (ar) ar.textContent = tSortDir === 1 ? '▲' : '▼';
+
+  tcount.textContent = `${list.length.toLocaleString()} trait${list.length === 1 ? '' : 's'}`;
+  tempty.style.display = list.length ? 'none' : '';
+
+  let html = '';
+  for (const r of list) {
+    const flags =
+      (r[5] ? '<span class="flag">ADD</span>' : '') +
+      (r[6] ? '<span class="flag">REMOVE</span>' : '') +
+      (r[7] ? '<span class="flag">BYPASS</span>' : '');
+    html += '<tr>' +
+      `<td><b>${esc(r[0])}</b><div class="mod">${esc(r[1])}</div></td>` +
+      `<td class="num hide-sm">${r[2]}</td>` +
+      `<td class="price">${r[3].toLocaleString()}</td>` +
+      `<td class="price">${r[4].toLocaleString()}</td>` +
+      `<td class="flags">${flags || '<span class="off">—</span>'}</td>` +
+      `<td class="mod hide-sm">${esc(r[8])}</td>` +
+      '</tr>';
+  }
+  trowsEl.innerHTML = html;
+}
+
+function renderXenos() {
+  const term = xq.value.trim().toLowerCase();
+  const race = xrace.value;
+  const en = xEnabled.checked;
+
+  let list = XENOTYPES.filter(r =>
+    (!race || r[0] === race) &&
+    (!en || (r[4] && r[5])) &&
+    (!term || r[0].toLowerCase().includes(term) || r[1].toLowerCase().includes(term) || r[2].toLowerCase().includes(term))
+  );
+
+  list.sort((a, b) => {
+    const x = xenoSortValue(a, xSortKey), y = xenoSortValue(b, xSortKey);
+    return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * xSortDir;
+  });
+
+  document.querySelectorAll('#panelXenos .arrow').forEach(el => el.textContent = '');
+  const ar = document.getElementById('xa' + xSortKey);
+  if (ar) ar.textContent = xSortDir === 1 ? '▲' : '▼';
+
+  xcount.textContent = `${list.length.toLocaleString()} xenotype${list.length === 1 ? '' : 's'}`;
+  xempty.style.display = list.length ? 'none' : '';
+
+  let html = '';
+  for (const r of list) {
+    const ok = r[4] && r[5];
+    const enabledLabel = ok
+      ? '<span class="flag">YES</span>'
+      : '<span class="off">NO</span>';
+    html += `<tr${ok ? '' : ' class="disabled"'}>` +
+      `<td><b>${esc(r[2])}</b></td>` +
+      `<td class="cat">${esc(r[0])}</td>` +
+      `<td class="price">${Number(r[3]).toLocaleString()}</td>` +
+      `<td class="flags">${enabledLabel}</td>` +
+      `<td class="mod hide-sm">${r[6] ? '<span class="flag">YES</span>' : '<span class="off">NO</span>'}</td>` +
+      '</tr>';
+  }
+  xrowsEl.innerHTML = html;
+}
+
+document.querySelectorAll('.tabs button').forEach(btn => {
+  btn.addEventListener('click', () => setTab(btn.dataset.tab));
+});
+
+document.querySelectorAll('#panelTraits thead th[data-k]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = parseKey(th.dataset.k);
+    if (tSortKey === k) tSortDir = -tSortDir; else { tSortKey = k; tSortDir = 1; }
+    renderTraits();
+  });
+});
+
+document.querySelectorAll('#panelXenos thead th[data-k]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = parseKey(th.dataset.k);
+    if (xSortKey === k) xSortDir = -xSortDir; else { xSortKey = k; xSortDir = 1; }
+    renderXenos();
+  });
+});
+
+[tq, tmod, tAddable, tRemovable, tBypass].forEach(el => el.addEventListener('input', renderTraits));
+[xq, xrace, xEnabled].forEach(el => el.addEventListener('input', renderXenos));
+
+window.addEventListener('hashchange', () => {
+  setTab(location.hash === '#xenotypes' ? 'xenotypes' : 'traits');
+});
+
+setTab(location.hash === '#xenotypes' ? 'xenotypes' : 'traits');
+renderTraits();
+renderXenos();
+</script>
+</body>
+</html>

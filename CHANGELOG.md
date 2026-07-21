@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-21 — Traits, Xenotypes, Events & Weather browsers
+
+- Added `docs/traits.html` (Traits / Xenotypes tabs) and `docs/events.html` (Incidents / Weather tabs) with search, sort, and filters.
+- Generated data JS from live config: 137 traits, 294 xenotype prices, 226 incidents, 22 weather types.
+- Extended `scripts/generate-docs-data.ps1` to regenerate all docs data files after CAP exports.
+- Site nav across Store, Traits & Xenotypes, and Events & Weather.
+- Per-section command hints (`!buy`, `!trait` / `!addtrait`, `!xenotypes`, `!event`, `!weather`, `!lookup`, etc.).
+- Redesigned docs UI (`docs/site.css`): sticky brand + Store / Traits / Events nav, shared ledger look, clearer command strips.
+- Dark mode is the default; Light/Dark toggle in the top bar (persists via `localStorage`).
+
 ## 2026-07-21 — Commands column sortable / filterable
 
 - Store browser Commands column is now clickable to sort by USE / EQUIP / WEAR flags.

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kat's RICS — Events</title>
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem("katsrics-theme");
+      document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+    } catch (e) {
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="brand-mark">Kat's <span>RICS</span></span>
+    <span class="brand-sub">Chat coin catalog</span>
+  </a>
+  <div class="topbar-end">
+    <nav class="nav" aria-label="Primary">
+      <a href="index.html">Store</a>
+      <a href="traits.html">Traits</a>
+      <a href="events.html" class="active">Events</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="themeToggle" aria-pressed="true" aria-label="Switch to light mode">
+      <span class="theme-label">Light</span>
+    </button>
+  </div>
+</header>
+
+<section class="page-intro">
+  <h1>Events &amp; Weather</h1>
+  <p class="lede">Incidents and weather you can trigger with chat coins.</p>
+  <div class="meta-row" id="stats"></div>
+  <div class="hint">
+    <span class="hint-label">Commands</span>
+    <div class="hint-body" id="howto"></div>
+  </div>
+</section>
+
+<div class="tabs" role="tablist">
+  <button type="button" id="tabIncidents" class="active" data-tab="incidents" role="tab">Incidents</button>
+  <button type="button" id="tabWeather" data-tab="weather" role="tab">Weather</button>
+</div>
+
+<div id="panelIncidents" class="panel active">
+  <div class="controls">
+    <input type="search" id="iq" placeholder="Search incidents… (name or defName)" aria-label="Search incidents">
+    <select id="icat" aria-label="Category"><option value="">All categories</option></select>
+    <select id="imod" aria-label="Mod"><option value="">All mods</option></select>
+    <select id="ikarma" aria-label="Karma"><option value="">All karma</option></select>
+    <select id="itype" aria-label="Type">
+      <option value="">All types</option>
+      <option value="raid">Raid</option>
+      <option value="disease">Disease</option>
+      <option value="quest">Quest</option>
+      <option value="weather">Weather incident</option>
+    </select>
+    <label class="toggle"><input type="checkbox" id="iEnabled" checked> Enabled only</label>
+    <span class="count" id="icount"></span>
+  </div>
+  <main>
+    <div class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th data-k="0">Event <span class="arrow" id="ia0"></span></th>
+            <th data-k="2" class="hide-sm">Category <span class="arrow" id="ia2"></span></th>
+            <th data-k="3" style="text-align:right">Cost <span class="arrow" id="ia3"></span></th>
+            <th data-k="4">Karma <span class="arrow" id="ia4"></span></th>
+            <th data-k="flags">Flags <span class="arrow" id="iaflags"></span></th>
+            <th data-k="7" class="hide-sm">Mod <span class="arrow" id="ia7"></span></th>
+          </tr>
+        </thead>
+        <tbody id="irows"></tbody>
+      </table>
+      <div class="empty" id="iempty" style="display:none">No incidents match your search.</div>
+    </div>
+  </main>
+</div>
+
+<div id="panelWeather" class="panel">
+  <div class="controls">
+    <input type="search" id="wq" placeholder="Search weather… (name or defName)" aria-label="Search weather">
+    <select id="wmod" aria-label="Mod"><option value="">All mods</option></select>
+    <select id="wkarma" aria-label="Karma"><option value="">All karma</option></select>
+    <label class="toggle"><input type="checkbox" id="wEnabled" checked> Enabled only</label>
+    <span class="count" id="wcount"></span>
+  </div>
+  <main>
+    <div class="table-shell">
+      <table>
+        <thead>
+          <tr>
+            <th data-k="0">Weather <span class="arrow" id="wa0"></span></th>
+            <th data-k="2" style="text-align:right">Cost <span class="arrow" id="wa2"></span></th>
+            <th data-k="3">Karma <span class="arrow" id="wa3"></span></th>
+            <th data-k="4" class="hide-sm" style="text-align:right">Cap <span class="arrow" id="wa4"></span></th>
+            <th data-k="6" class="hide-sm">Mod <span class="arrow" id="wa6"></span></th>
+          </tr>
+        </thead>
+        <tbody id="wrows"></tbody>
+      </table>
+      <div class="empty" id="wempty" style="display:none">No weather types match your search.</div>
+    </div>
+  </main>
+</div>
+
+<footer>
+  Generated from Incidents.json and Weather.json ·
+  <a href="https://github.com/AzraelGodKing/KatsRics">source</a> ·
+  Powered by <a href="https://github.com/ekudram/-cap-RimworldInteractiveChatServices">RICS</a>
+</footer>
+
+<script src="theme.js"></script>
+<script src="incidents-data.js"></script>
+<script src="weather-data.js"></script>
+<script>
+// INCIDENTS: [label, defName, category, baseCost, karmaType, eventCap, enabled, mod, modActive, isRaid, isDisease, isQuest, isWeatherIncident, availableForCommands]
+// WEATHER: [label, defName, baseCost, karmaType, eventCap, enabled, mod, modActive]
+
+const HINTS = {
+  incidents:
+    'Trigger with <code>!event &lt;event_name&gt;</code> (e.g. <code>!event ambush</code>). ' +
+    'Look up prices with <code>!lookup event &lt;name&gt;</code>. ' +
+    'Raids also use <code>!raid</code> / <code>!raidinfo</code>.',
+  weather:
+    'Set weather with <code>!weather &lt;type&gt;</code> ' +
+    '(e.g. <code>!weather rain</code>, <code>!weather clear</code>). ' +
+    'Look up costs with <code>!lookup weather &lt;name&gt;</code>.'
+};
+
+const howto = document.getElementById('howto');
+const irowsEl = document.getElementById('irows');
+const wrowsEl = document.getElementById('wrows');
+const iq = document.getElementById('iq');
+const icat = document.getElementById('icat');
+const imod = document.getElementById('imod');
+const ikarma = document.getElementById('ikarma');
+const itype = document.getElementById('itype');
+const iEnabled = document.getElementById('iEnabled');
+const icount = document.getElementById('icount');
+const iempty = document.getElementById('iempty');
+const wq = document.getElementById('wq');
+const wmod = document.getElementById('wmod');
+const wkarma = document.getElementById('wkarma');
+const wEnabled = document.getElementById('wEnabled');
+const wcount = document.getElementById('wcount');
+const wempty = document.getElementById('wempty');
+
+let iSortKey = 0, iSortDir = 1;
+let wSortKey = 0, wSortDir = 1;
+
+const cats = [...new Set(INCIDENTS.map(r => r[2]))].sort();
+const iMods = [...new Set(INCIDENTS.map(r => r[7]))].sort();
+const iKarmas = [...new Set(INCIDENTS.map(r => r[4]))].sort();
+for (const c of cats) icat.add(new Option(c, c));
+for (const m of iMods) imod.add(new Option(m, m));
+for (const k of iKarmas) ikarma.add(new Option(k, k));
+
+const wMods = [...new Set(WEATHER.map(r => r[6]))].sort();
+const wKarmas = [...new Set(WEATHER.map(r => r[3]))].sort();
+for (const m of wMods) wmod.add(new Option(m, m));
+for (const k of wKarmas) wkarma.add(new Option(k, k));
+
+const iEnabledCount = INCIDENTS.filter(r => r[6]).length;
+const wEnabledCount = WEATHER.filter(r => r[5]).length;
+document.getElementById('stats').innerHTML =
+  `<span><b>${INCIDENTS.length.toLocaleString()}</b> incidents</span>` +
+  `<span><b>${iEnabledCount.toLocaleString()}</b> enabled</span>` +
+  `<span><b>${WEATHER.length.toLocaleString()}</b> weather</span>` +
+  `<span><b>${wEnabledCount.toLocaleString()}</b> weather on</span>`;
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function incidentFlags(r) {
+  return [
+    r[9] && 'RAID',
+    r[10] && 'DISEASE',
+    r[11] && 'QUEST',
+    r[12] && 'WEATHER',
+    r[13] && 'CMD'
+  ].filter(Boolean).join(' ') || '';
+}
+
+function incidentSortValue(r, key) {
+  if (key === 'flags') return incidentFlags(r) || '~';
+  return r[key];
+}
+
+function parseKey(raw) {
+  if (raw === 'flags') return raw;
+  return +raw;
+}
+
+function matchesType(r, type) {
+  if (!type) return true;
+  if (type === 'raid') return r[9];
+  if (type === 'disease') return r[10];
+  if (type === 'quest') return r[11];
+  if (type === 'weather') return r[12];
+  return true;
+}
+
+function setTab(tab) {
+  const isIncidents = tab !== 'weather';
+  document.getElementById('panelIncidents').classList.toggle('active', isIncidents);
+  document.getElementById('panelWeather').classList.toggle('active', !isIncidents);
+  document.getElementById('tabIncidents').classList.toggle('active', isIncidents);
+  document.getElementById('tabWeather').classList.toggle('active', !isIncidents);
+  howto.innerHTML = HINTS[isIncidents ? 'incidents' : 'weather'];
+  const hash = isIncidents ? '#incidents' : '#weather';
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+
+function renderIncidents() {
+  const term = iq.value.trim().toLowerCase();
+  const cat = icat.value, mod = imod.value, karma = ikarma.value, type = itype.value, en = iEnabled.checked;
+
+  let list = INCIDENTS.filter(r =>
+    (!en || r[6]) &&
+    (!cat || r[2] === cat) &&
+    (!mod || r[7] === mod) &&
+    (!karma || r[4] === karma) &&
+    matchesType(r, type) &&
+    (!term || r[0].toLowerCase().includes(term) || r[1].toLowerCase().includes(term))
+  );
+
+  list.sort((a, b) => {
+    const x = incidentSortValue(a, iSortKey), y = incidentSortValue(b, iSortKey);
+    return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * iSortDir;
+  });
+
+  document.querySelectorAll('#panelIncidents .arrow').forEach(el => el.textContent = '');
+  const ar = document.getElementById('ia' + iSortKey);
+  if (ar) ar.textContent = iSortDir === 1 ? '▲' : '▼';
+
+  icount.textContent = `${list.length.toLocaleString()} incident${list.length === 1 ? '' : 's'}`;
+  iempty.style.display = list.length ? 'none' : '';
+
+  let html = '';
+  for (const r of list) {
+    const flags =
+      (r[9] ? '<span class="flag">RAID</span>' : '') +
+      (r[10] ? '<span class="flag">DISEASE</span>' : '') +
+      (r[11] ? '<span class="flag">QUEST</span>' : '') +
+      (r[12] ? '<span class="flag">WEATHER</span>' : '') +
+      (r[13] ? '<span class="flag">CMD</span>' : '') +
+      (r[6] ? '' : '<span class="off">DISABLED</span>');
+    html += `<tr${r[6] ? '' : ' class="disabled"'}>` +
+      `<td><b>${esc(r[0])}</b><div class="mod">${esc(r[1])}</div></td>` +
+      `<td class="cat hide-sm">${esc(r[2])}</td>` +
+      `<td class="price">${r[3].toLocaleString()}</td>` +
+      `<td class="cat">${esc(r[4])}</td>` +
+      `<td class="flags">${flags}</td>` +
+      `<td class="mod hide-sm">${esc(r[7])}</td>` +
+      '</tr>';
+  }
+  irowsEl.innerHTML = html;
+}
+
+function renderWeather() {
+  const term = wq.value.trim().toLowerCase();
+  const mod = wmod.value, karma = wkarma.value, en = wEnabled.checked;
+
+  let list = WEATHER.filter(r =>
+    (!en || r[5]) &&
+    (!mod || r[6] === mod) &&
+    (!karma || r[3] === karma) &&
+    (!term || r[0].toLowerCase().includes(term) || r[1].toLowerCase().includes(term))
+  );
+
+  list.sort((a, b) => {
+    const x = a[wSortKey], y = b[wSortKey];
+    return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * wSortDir;
+  });
+
+  document.querySelectorAll('#panelWeather .arrow').forEach(el => el.textContent = '');
+  const ar = document.getElementById('wa' + wSortKey);
+  if (ar) ar.textContent = wSortDir === 1 ? '▲' : '▼';
+
+  wcount.textContent = `${list.length.toLocaleString()} weather type${list.length === 1 ? '' : 's'}`;
+  wempty.style.display = list.length ? 'none' : '';
+
+  let html = '';
+  for (const r of list) {
+    html += `<tr${r[5] ? '' : ' class="disabled"'}>` +
+      `<td><b>${esc(r[0])}</b><div class="mod">${esc(r[1])}</div>${r[5] ? '' : ' <span class="off">DISABLED</span>'}</td>` +
+      `<td class="price">${r[2].toLocaleString()}</td>` +
+      `<td class="cat">${esc(r[3])}</td>` +
+      `<td class="num hide-sm">${r[4]}</td>` +
+      `<td class="mod hide-sm">${esc(r[6])}</td>` +
+      '</tr>';
+  }
+  wrowsEl.innerHTML = html;
+}
+
+document.querySelectorAll('.tabs button').forEach(btn => {
+  btn.addEventListener('click', () => setTab(btn.dataset.tab));
+});
+
+document.querySelectorAll('#panelIncidents thead th[data-k]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = parseKey(th.dataset.k);
+    if (iSortKey === k) iSortDir = -iSortDir; else { iSortKey = k; iSortDir = 1; }
+    renderIncidents();
+  });
+});
+
+document.querySelectorAll('#panelWeather thead th[data-k]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = +th.dataset.k;
+    if (wSortKey === k) wSortDir = -wSortDir; else { wSortKey = k; wSortDir = 1; }
+    renderWeather();
+  });
+});
+
+[iq, icat, imod, ikarma, itype, iEnabled].forEach(el => el.addEventListener('input', renderIncidents));
+[wq, wmod, wkarma, wEnabled].forEach(el => el.addEventListener('input', renderWeather));
+
+window.addEventListener('hashchange', () => {
+  setTab(location.hash === '#weather' ? 'weather' : 'incidents');
+});
+
+setTab(location.hash === '#weather' ? 'weather' : 'incidents');
+renderIncidents();
+renderWeather();
+</script>
+</body>
+</html>
