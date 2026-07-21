@@ -63,6 +63,7 @@
 
 :root {
   --topbar-h: 64px;
+  --controls-h: 53px;
   --font-display: "Syne", sans-serif;
   --font-body: "Figtree", sans-serif;
   --max: 1120px;
@@ -407,17 +408,19 @@ main {
   background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 8px;
-  overflow: hidden;
+  /* overflow must stay visible so thead sticky can pin to the viewport */
 }
 
 table {
   width: 100%;
-  border-collapse: collapse;
+  /* collapse breaks position:sticky on th in Chromium */
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 thead th {
   position: sticky;
-  top: calc(var(--topbar-h) + 53px);
+  top: calc(var(--topbar-h) + var(--controls-h));
   z-index: 5;
   background: var(--thead-bg);
   color: var(--copper);
@@ -432,6 +435,12 @@ thead th {
   white-space: nowrap;
   user-select: none;
 }
+
+thead th:first-child { border-top-left-radius: 7px; }
+thead th:last-child { border-top-right-radius: 7px; }
+
+tbody tr:last-child td:first-child { border-bottom-left-radius: 7px; }
+tbody tr:last-child td:last-child { border-bottom-right-radius: 7px; }
 
 thead th:hover { background: var(--thead-hover); }
 
@@ -557,8 +566,6 @@ footer a { font-weight: 600; }
   .controls input[type=search] { width: 100%; }
 
   .count { margin-left: 0; width: 100%; }
-
-  thead th { top: calc(var(--topbar-h) + 96px); }
 
   .hint { flex-direction: column; gap: 4px; }
 }
