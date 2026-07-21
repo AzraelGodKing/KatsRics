@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-07-21 — Fix sticky table header gap
+
+- Column headers no longer float mid-list with rows sitting between the filter bar and the header.
+- Sticky `thead` offset is measured from the live top bar / controls height (handles wrapped filters).
+- Switched tables to `border-collapse: separate` and dropped `.table-shell` overflow clipping so sticky headers pin correctly in Chromium.
+
 ## 2026-07-21 — Traits, Xenotypes, Events & Weather browsers
 
 - Added `docs/traits.html` (Traits / Xenotypes tabs) and `docs/events.html` (Incidents / Weather tabs) with search, sort, and filters.
