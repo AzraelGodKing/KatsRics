@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kat's RICS — Backstories</title>
+<script>
+  (function () {
+    try {
+      var t = localStorage.getItem("katsrics-theme");
+      document.documentElement.setAttribute("data-theme", t === "light" ? "light" : "dark");
+    } catch (e) {
+      document.documentElement.setAttribute("data-theme", "dark");
+    }
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="site.css">
+<style>
+  .title-cell .def { display: block; font-size: 0.78rem; font-weight: 500; color: var(--muted); margin-top: 2px; }
+  .title-cell .desc {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.86rem;
+    font-weight: 400;
+    color: var(--ink-soft);
+    white-space: pre-wrap;
+    line-height: 1.45;
+  }
+  .slot-pill {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: 3px;
+    padding: 2px 7px;
+    border: 1px solid var(--line);
+    background: var(--chip);
+    color: var(--copper);
+  }
+  .slot-pill.adult { color: var(--moss); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="brand" href="index.html">
+    <span class="brand-mark">Kat's <span>RICS</span></span>
+    <span class="brand-sub">Chat coin catalog</span>
+  </a>
+  <div class="topbar-end">
+    <nav class="nav" aria-label="Primary">
+      <a href="index.html">Store</a>
+      <a href="traits.html">Traits</a>
+      <a href="backstories.html" class="active">Backstories</a>
+      <a href="events.html">Events</a>
+    </nav>
+    <button type="button" class="theme-toggle" id="themeToggle" aria-pressed="true" aria-label="Switch to light mode">
+      <span class="theme-label">Light</span>
+    </button>
+  </div>
+</header>
+
+<section class="page-intro">
+  <h1>Backstories</h1>
+  <p class="lede">Read-only catalog of childhood and adulthood backstories from RimWorld (Core + DLCs). Not purchased individually.</p>
+  <div class="meta-row" id="stats"></div>
+  <div class="hint">
+    <span class="hint-label">Commands</span>
+    <div class="hint-body">
+      Random reroll only:
+      <code>!shufflechildhood</code> and <code>!shuffleadulthood</code>
+      (default 1000 coins each). This page is a reference — there is no buy-by-name command.
+    </div>
+  </div>
+</section>
+
+<div class="controls">
+  <input type="search" id="q" placeholder="Search title, defName, or description…" aria-label="Search backstories">
+  <select id="slot" aria-label="Slot">
+    <option value="">All slots</option>
+    <option value="Childhood">Childhood</option>
+    <option value="Adulthood">Adulthood</option>
+  </select>
+  <select id="mod" aria-label="Source"><option value="">All sources</option></select>
+  <label class="toggle"><input type="checkbox" id="shuffleOnly" checked> Shuffleable only</label>
+  <span class="count" id="count"></span>
+</div>
+
+<main>
+  <div class="table-shell">
+    <table>
+      <thead>
+        <tr>
+          <th data-k="0">Backstory <span class="arrow" id="a0"></span></th>
+          <th data-k="2">Slot <span class="arrow" id="a2"></span></th>
+          <th data-k="4" class="hide-sm">Skills <span class="arrow" id="a4"></span></th>
+          <th data-k="5" class="hide-sm">Work disables <span class="arrow" id="a5"></span></th>
+          <th data-k="8" class="hide-sm">Source <span class="arrow" id="a8"></span></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" style="display:none">No backstories match your search.</div>
+  </div>
+</main>
+
+<footer>
+  Generated from Backstories.json (RimWorld def scrape) ·
+  <a href="https://github.com/AzraelGodKing/KatsRics">source</a> ·
+  Powered by <a href="https://github.com/ekudram/-cap-RimworldInteractiveChatServices">RICS</a>
+</footer>
+
+<script src="theme.js"></script>
+<script src="backstories-data.js"></script>
+<script>
+// BACKSTORIES: [title, defName, slot, titleShort, skills, workDisables, categories, shuffleable, mod, description]
+const rowsEl = document.getElementById('rows');
+const q = document.getElementById('q');
+const slotSel = document.getElementById('slot');
+const modSel = document.getElementById('mod');
+const shuffleOnly = document.getElementById('shuffleOnly');
+const countEl = document.getElementById('count');
+const emptyEl = document.getElementById('empty');
+
+let sortKey = 0, sortDir = 1;
+
+const mods = [...new Set(BACKSTORIES.map(r => r[8]))].sort();
+for (const m of mods) modSel.add(new Option(m, m));
+
+const childCount = BACKSTORIES.filter(r => r[2] === 'Childhood').length;
+const adultCount = BACKSTORIES.filter(r => r[2] === 'Adulthood').length;
+document.getElementById('stats').innerHTML =
+  `<span><b>${BACKSTORIES.length.toLocaleString()}</b> backstories</span>` +
+  `<span><b>${childCount.toLocaleString()}</b> childhood</span>` +
+  `<span><b>${adultCount.toLocaleString()}</b> adulthood</span>` +
+  `<span><b>${mods.length}</b> sources</span>`;
+
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+function render() {
+  const term = q.value.trim().toLowerCase();
+  const slot = slotSel.value, mod = modSel.value, sh = shuffleOnly.checked;
+
+  let list = BACKSTORIES.filter(r =>
+    (!sh || r[7]) &&
+    (!slot || r[2] === slot) &&
+    (!mod || r[8] === mod) &&
+    (!term ||
+      r[0].toLowerCase().includes(term) ||
+      r[1].toLowerCase().includes(term) ||
+      r[3].toLowerCase().includes(term) ||
+      r[9].toLowerCase().includes(term) ||
+      r[4].toLowerCase().includes(term))
+  );
+
+  list.sort((a, b) => {
+    const x = a[sortKey], y = b[sortKey];
+    return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * sortDir;
+  });
+
+  document.querySelectorAll('.arrow').forEach(el => el.textContent = '');
+  const ar = document.getElementById('a' + sortKey);
+  if (ar) ar.textContent = sortDir === 1 ? '▲' : '▼';
+
+  countEl.textContent = `${list.length.toLocaleString()} backstor${list.length === 1 ? 'y' : 'ies'}`;
+  emptyEl.style.display = list.length ? 'none' : '';
+
+  let html = '';
+  for (const r of list) {
+    const slotClass = r[2] === 'Adulthood' ? 'slot-pill adult' : 'slot-pill';
+    html += `<tr>` +
+      `<td class="title-cell"><b>${esc(r[0])}</b>` +
+        `<span class="def">${esc(r[1])}</span>` +
+        (r[9] ? `<span class="desc">${esc(r[9])}</span>` : '') +
+      `</td>` +
+      `<td><span class="${slotClass}">${esc(r[2])}</span></td>` +
+      `<td class="cat hide-sm">${esc(r[4] || '—')}</td>` +
+      `<td class="mod hide-sm">${esc(r[5] || '—')}</td>` +
+      `<td class="mod hide-sm">${esc(r[8])}</td>` +
+      '</tr>';
+  }
+  rowsEl.innerHTML = html;
+}
+
+document.querySelectorAll('thead th[data-k]').forEach(th => {
+  th.addEventListener('click', () => {
+    const k = +th.dataset.k;
+    if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = 1; }
+    render();
+  });
+});
+[q, slotSel, modSel, shuffleOnly].forEach(el => el.addEventListener('input', render));
+render();
+</script>
+</body>
+</html>
