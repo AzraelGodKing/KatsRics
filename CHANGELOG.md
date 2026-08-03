@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-03 — Trait descriptions & effects on Traits page
+
+- Traits browser now shows each trait's RimWorld description and stat effects (when present).
+- Search matches name, defName, description, and effects text.
+- Regenerated `docs/traits-data.js` to include description alongside stats.
+
 ## 2026-08-03 — Read-only Backstories browser
 
 - Added `docs/backstories.html` (search / slot / source filters) for childhood and adulthood backstories.

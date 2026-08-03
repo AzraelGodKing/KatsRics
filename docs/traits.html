@@ -18,6 +18,34 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="site.css">
+<style>
+  .trait-cell .def {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .trait-cell .desc {
+    display: block;
+    margin-top: 6px;
+    font-size: 0.86rem;
+    font-weight: 400;
+    color: var(--ink-soft);
+    line-height: 1.45;
+  }
+  .trait-cell .effects {
+    display: none;
+    margin-top: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--moss);
+    line-height: 1.4;
+  }
+  @media (max-width: 760px) {
+    .trait-cell .effects { display: block; }
+  }
+</style>
 </head>
 <body>
 
@@ -41,7 +69,7 @@
 
 <section class="page-intro">
   <h1>Traits &amp; Xenotypes</h1>
-  <p class="lede">Pawn traits and xenotype prices from the live CAP ChatInteractive config.</p>
+  <p class="lede">Pawn traits and xenotype prices from the live CAP ChatInteractive config — including what each trait does.</p>
   <div class="meta-row" id="stats"></div>
   <div class="hint">
     <span class="hint-label">Commands</span>
@@ -56,7 +84,7 @@
 
 <div id="panelTraits" class="panel active">
   <div class="controls">
-    <input type="search" id="tq" placeholder="Search traits… (name or defName)" aria-label="Search traits">
+    <input type="search" id="tq" placeholder="Search traits… (name, effect, or description)" aria-label="Search traits">
     <select id="tmod" aria-label="Mod"><option value="">All mods</option></select>
     <label class="toggle"><input type="checkbox" id="tAddable"> Addable only</label>
     <label class="toggle"><input type="checkbox" id="tRemovable"> Removable only</label>
@@ -69,6 +97,7 @@
         <thead>
           <tr>
             <th data-k="0">Trait <span class="arrow" id="ta0"></span></th>
+            <th data-k="10" class="hide-sm">Effects <span class="arrow" id="ta10"></span></th>
             <th data-k="2" class="hide-sm" style="text-align:right">Degree <span class="arrow" id="ta2"></span></th>
             <th data-k="3" style="text-align:right">Add $ <span class="arrow" id="ta3"></span></th>
             <th data-k="4" style="text-align:right">Remove $ <span class="arrow" id="ta4"></span></th>
@@ -119,7 +148,7 @@
 <script src="traits-data.js"></script>
 <script src="xenotypes-data.js"></script>
 <script>
-// TRAITS: [name, defName, degree, addPrice, removePrice, canAdd, canRemove, bypassLimit, mod, modActive, statsJoined]
+// TRAITS: [name, defName, degree, addPrice, removePrice, canAdd, canRemove, bypassLimit, mod, modActive, statsJoined, description]
 // XENOTYPES: [raceDisplayName, raceDef, xenotype, price, xenotypeEnabled, raceEnabled, modActive]
 
 const HINTS = {
@@ -209,7 +238,11 @@ function renderTraits() {
     (!tAddable.checked || r[5]) &&
     (!tRemovable.checked || r[6]) &&
     (!tBypass.checked || r[7]) &&
-    (!term || r[0].toLowerCase().includes(term) || r[1].toLowerCase().includes(term))
+    (!term ||
+      r[0].toLowerCase().includes(term) ||
+      r[1].toLowerCase().includes(term) ||
+      (r[10] && r[10].toLowerCase().includes(term)) ||
+      (r[11] && r[11].toLowerCase().includes(term)))
   );
 
   list.sort((a, b) => {
@@ -230,8 +263,11 @@ function renderTraits() {
       (r[5] ? '<span class="flag">ADD</span>' : '') +
       (r[6] ? '<span class="flag">REMOVE</span>' : '') +
       (r[7] ? '<span class="flag">BYPASS</span>' : '');
+    const desc = r[11] ? `<span class="desc">${esc(r[11])}</span>` : '';
+    const effectsMobile = r[10] ? `<span class="effects">${esc(r[10])}</span>` : '';
     html += '<tr>' +
-      `<td><b>${esc(r[0])}</b><div class="mod">${esc(r[1])}</div></td>` +
+      `<td class="trait-cell"><b>${esc(r[0])}</b><span class="def">${esc(r[1])}</span>${desc}${effectsMobile}</td>` +
+      `<td class="cat hide-sm">${r[10] ? esc(r[10]) : '<span class="off">—</span>'}</td>` +
       `<td class="num hide-sm">${r[2]}</td>` +
       `<td class="price">${r[3].toLocaleString()}</td>` +
       `<td class="price">${r[4].toLocaleString()}</td>` +
