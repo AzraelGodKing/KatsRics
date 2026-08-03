@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-08-03 — Read-only Backstories browser
+
+- Added `docs/backstories.html` (search / slot / source filters) for childhood and adulthood backstories.
+- Added `scripts/export-backstories.ps1` to scrape RimWorld `BackstoryDef` XML into `Backstories.json`.
+- Extended `scripts/generate-docs-data.ps1` to emit `docs/backstories-data.js`.
+- Nav link on Store, Traits, Events, and Backstories pages.
+- Catalog is reference-only; chat still uses `!shufflechildhood` / `!shuffleadulthood`.
+
 ## 2026-07-21 — Fix sticky table header gap
 
 - Column headers no longer float mid-list with rows sitting between the filter bar and the header.

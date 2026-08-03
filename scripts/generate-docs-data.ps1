@@ -1,6 +1,7 @@
 # Generates docs browser data JS from repo JSON exports:
-#   traits-data.js, xenotypes-data.js, incidents-data.js, weather-data.js
+#   traits-data.js, xenotypes-data.js, incidents-data.js, weather-data.js, backstories-data.js
 # Usage (from repo root): powershell -NoProfile -File scripts/generate-docs-data.ps1
+# Backstories.json is produced by: powershell -NoProfile -File scripts/export-backstories.ps1
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
@@ -105,6 +106,34 @@ foreach ($p in $weather.PSObject.Properties) {
 }
 $weatherJs = "const WEATHER = [`n" + ($weatherRows -join ",`n") + "`n];`n"
 Write-Utf8NoBom (Join-Path $root "docs\weather-data.js") $weatherJs
+
+# --- Backstories (read-only catalog from Backstories.json) ---
+# Row: [title, defName, slot, titleShort, skillsJoined, workDisablesJoined, categoriesJoined, shuffleable, mod, description]
+$backstoryPath = Join-Path $root "Backstories.json"
+if (Test-Path $backstoryPath) {
+  $backstories = Get-Content -Raw $backstoryPath | ConvertFrom-Json
+  $bsRows = New-Object System.Collections.Generic.List[string]
+  $items = $backstories.items
+  foreach ($p in $items.PSObject.Properties) {
+    $b = $p.Value
+    $title = Js-Escape ([string]$b.Title)
+    $def = Js-Escape ([string]$b.DefName)
+    $slot = Js-Escape ([string]$b.Slot)
+    $short = Js-Escape ([string]$b.TitleShort)
+    $skills = Js-Escape ([string]$b.SkillGainsJoined)
+    $work = Js-Escape ((@($b.WorkDisables) | Where-Object { $_ }) -join ", ")
+    $cats = Js-Escape ((@($b.SpawnCategories) | Where-Object { $_ }) -join ", ")
+    $mod = Js-Escape ([string]$b.ModSource)
+    $desc = Js-Escape ([string]$b.Description)
+    $row = "[`"$title`",`"$def`",`"$slot`",`"$short`",`"$skills`",`"$work`",`"$cats`",$(Js-Bool $b.Shuffleable),`"$mod`",`"$desc`"]"
+    [void]$bsRows.Add($row)
+  }
+  $bsJs = "const BACKSTORIES = [`n" + ($bsRows -join ",`n") + "`n];`n"
+  Write-Utf8NoBom (Join-Path $root "docs\backstories-data.js") $bsJs
+  Write-Host ("Wrote docs/backstories-data.js ({0} backstories)" -f $bsRows.Count)
+} else {
+  Write-Host "Skip backstories-data.js (Backstories.json not found - run scripts/export-backstories.ps1)"
+}
 
 Write-Host ("Wrote docs/traits-data.js ({0} traits)" -f $traitRows.Count)
 Write-Host ("Wrote docs/xenotypes-data.js ({0} xenotype entries)" -f $xenoRows.Count)
