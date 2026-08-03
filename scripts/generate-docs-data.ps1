@@ -23,8 +23,32 @@ function Write-Utf8NoBom([string]$Path, [string]$Content) {
   [System.IO.File]::WriteAllText($Path, $Content, $utf8)
 }
 
+function Normalize-TraitDescription([string]$desc) {
+  if ($null -eq $desc) { return "" }
+  $desc = $desc -replace "`r", ""
+  $desc = $desc.Replace("{PAWN_nameDef}", "This colonist")
+  $desc = $desc.Replace("{PAWN_pronoun}", "they")
+  $desc = $desc.Replace("{PAWN_possessive}", "their")
+  $desc = $desc.Replace("{PAWN_objective}", "them")
+  $desc = $desc.Replace("{PAWN_gender}", "")
+  $desc = $desc -replace "\bThis colonist is an\b", "This colonist is an"
+  $desc = $desc -replace "\bthey is\b", "they are"
+  $desc = $desc -replace "\bthey has\b", "they have"
+  $desc = $desc -replace "\bthey learns\b", "they learn"
+  $desc = $desc -replace "\bthey gets\b", "they get"
+  $desc = $desc -replace "\bthey enjoys\b", "they enjoy"
+  $desc = $desc -replace "\bthey never minds\b", "they never mind"
+  $desc = $desc -replace "\bthey doesn't\b", "they don't"
+  $desc = $desc -replace "\bthey feels\b", "they feel"
+  $desc = $desc -replace "\bthey rarely insults\b", "they rarely insult"
+  $desc = $desc -replace "\bthey also never judges\b", "they also never judge"
+  $desc = $desc -replace "\bthey can\b", "they can"
+  $desc = $desc -replace "\b\. they\b", ". They"
+  return $desc.Trim()
+}
+
 # --- Traits ---
-# Row: [name, defName, degree, addPrice, removePrice, canAdd, canRemove, bypassLimit, mod, modActive, statsJoined]
+# Row: [name, defName, degree, addPrice, removePrice, canAdd, canRemove, bypassLimit, mod, modActive, statsJoined, description]
 $traits = Get-Content -Raw (Join-Path $root "Traits.json") | ConvertFrom-Json
 $traitRows = New-Object System.Collections.Generic.List[string]
 foreach ($p in $traits.PSObject.Properties) {
@@ -36,10 +60,11 @@ foreach ($p in $traits.PSObject.Properties) {
   $def = Js-Escape ([string]$t.DefName)
   $mod = Js-Escape ([string]$t.ModSource)
   $statsEsc = Js-Escape $statsJoined
+  $descEsc = Js-Escape (Normalize-TraitDescription ([string]$t.Description))
   $degree = [int]$t.Degree
   $add = [int]$t.AddPrice
   $rem = [int]$t.RemovePrice
-  $row = "[`"$name`",`"$def`",$degree,$add,$rem,$(Js-Bool $t.CanAdd),$(Js-Bool $t.CanRemove),$(Js-Bool $t.BypassLimit),`"$mod`",$(Js-Bool $t.modactive),`"$statsEsc`"]"
+  $row = "[`"$name`",`"$def`",$degree,$add,$rem,$(Js-Bool $t.CanAdd),$(Js-Bool $t.CanRemove),$(Js-Bool $t.BypassLimit),`"$mod`",$(Js-Bool $t.modactive),`"$statsEsc`",`"$descEsc`"]"
   [void]$traitRows.Add($row)
 }
 $traitsJs = "const TRAITS = [`n" + ($traitRows -join ",`n") + "`n];`n"
