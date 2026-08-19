@@ -569,3 +569,54 @@ footer a { font-weight: 600; }
 
   .hint { flex-direction: column; gap: 4px; }
 }
+
+.trait-cell .def,
+.title-cell .def {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.trait-cell .desc,
+.title-cell .desc {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.86rem;
+  font-weight: 400;
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+.title-cell .desc { white-space: pre-wrap; }
+
+.trait-cell .effects {
+  display: none;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--moss);
+  line-height: 1.4;
+}
+
+.slot-pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  background: var(--chip);
+  color: var(--copper);
+}
+
+.slot-pill.adult { color: var(--moss); }
+
+.page-shell { min-height: 40vh; }
+
+@media (max-width: 760px) {
+  .trait-cell .effects { display: block; }
+}
