@@ -68,6 +68,7 @@ const filtered = computed(() => {
 <template>
   <div class="page-shell">
     <PageIntro
+      kicker="Channel 03"
       title="Backstories"
       lede="Read-only catalog of childhood and adulthood backstories from RimWorld (Core + DLCs). Not purchased individually."
       :stats="stats"

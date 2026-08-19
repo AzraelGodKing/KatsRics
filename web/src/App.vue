@@ -1,5 +1,5 @@
 <script setup>
-import AppHeader from "./components/AppHeader.vue";
+import AppSidebar from "./components/AppSidebar.vue";
 import AppFooter from "./components/AppFooter.vue";
 import { useStickyOffsets } from "./composables/useStickyOffsets";
 
@@ -7,7 +7,11 @@ useStickyOffsets();
 </script>
 
 <template>
-  <AppHeader />
-  <router-view />
-  <AppFooter />
+  <div class="app-frame">
+    <AppSidebar />
+    <div class="stage">
+      <router-view />
+      <AppFooter />
+    </div>
+  </div>
 </template>

@@ -83,7 +83,7 @@ const filtered = computed(() => {
 
 <template>
   <div class="page-shell">
-    <PageIntro title="Store" lede="Everything you can buy with chat coins — search, filter, and sort the live catalog." :stats="stats">
+    <PageIntro kicker="Channel 01" title="Store" lede="Everything you can buy with chat coins — search, filter, and sort the live catalog." :stats="stats">
       Buy with <code>!buy &lt;item&gt;</code> (e.g. <code>!buy thrumbo</code>).
       <span class="flag">USE</span> → <code>!use</code>,
       <span class="flag">EQUIP</span> → <code>!equip</code>,
