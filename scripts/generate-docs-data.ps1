@@ -1,26 +1,51 @@
-# Generates docs browser data JS from repo JSON exports:
-#   traits-data.js, xenotypes-data.js, incidents-data.js, weather-data.js, backstories-data.js
+# Generates Vue catalog JSON under web/public/data/:
+#   items.json, traits.json, xenotypes.json, incidents.json, weather.json, backstories.json
 # Usage (from repo root): powershell -NoProfile -File scripts/generate-docs-data.ps1
 # Backstories.json is produced by: powershell -NoProfile -File scripts/export-backstories.ps1
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path (Join-Path $root "Traits.json"))) {
-  $root = Get-Location
+  $root = (Get-Location).Path
 }
 
-function Js-Escape([string]$s) {
-  if ($null -eq $s) { return "" }
-  return ($s -replace "\\", "\\\\" -replace "`"", "\`"" -replace "`r", "" -replace "`n", "\\n")
-}
-
-function Js-Bool($b) {
-  if ($b) { "true" } else { "false" }
-}
+$outDir = Join-Path $root "web\public\data"
+New-Item -ItemType Directory -Force -Path $outDir | Out-Null
 
 function Write-Utf8NoBom([string]$Path, [string]$Content) {
   $utf8 = New-Object System.Text.UTF8Encoding $false
   [System.IO.File]::WriteAllText($Path, $Content, $utf8)
+}
+
+function Js-Escape([string]$s) {
+  if ($null -eq $s) { return "" }
+  return ($s -replace "\\", "\\\\" -replace '"', '\"' -replace "`r", "" -replace "`n", "\\n")
+}
+
+function Json-Cell($v) {
+  if ($v -is [bool]) { if ($v) { return "true" } else { return "false" } }
+  if ($v -is [int] -or $v -is [long] -or $v -is [double] -or $v -is [decimal]) { return "$v" }
+  return ('"{0}"' -f (Js-Escape ([string]$v)))
+}
+
+function Write-JsonRows([string]$Name, $Rows) {
+  $sb = New-Object System.Text.StringBuilder
+  [void]$sb.Append("[")
+  $first = $true
+  foreach ($row in $Rows) {
+    if (-not $first) { [void]$sb.Append(",") }
+    $first = $false
+    [void]$sb.Append("[")
+    $inner = $true
+    foreach ($cell in @($row)) {
+      if (-not $inner) { [void]$sb.Append(",") }
+      $inner = $false
+      [void]$sb.Append((Json-Cell $cell))
+    }
+    [void]$sb.Append("]")
+  }
+  [void]$sb.Append("]")
+  Write-Utf8NoBom (Join-Path $outDir "$Name.json") $sb.ToString()
 }
 
 function Normalize-TraitDescription([string]$desc) {
@@ -31,7 +56,6 @@ function Normalize-TraitDescription([string]$desc) {
   $desc = $desc.Replace("{PAWN_possessive}", "their")
   $desc = $desc.Replace("{PAWN_objective}", "them")
   $desc = $desc.Replace("{PAWN_gender}", "")
-  $desc = $desc -replace "\bThis colonist is an\b", "This colonist is an"
   $desc = $desc -replace "\bthey is\b", "they are"
   $desc = $desc -replace "\bthey has\b", "they have"
   $desc = $desc -replace "\bthey learns\b", "they learn"
@@ -42,125 +66,153 @@ function Normalize-TraitDescription([string]$desc) {
   $desc = $desc -replace "\bthey feels\b", "they feel"
   $desc = $desc -replace "\bthey rarely insults\b", "they rarely insult"
   $desc = $desc -replace "\bthey also never judges\b", "they also never judge"
-  $desc = $desc -replace "\bthey can\b", "they can"
   $desc = $desc -replace "\b\. they\b", ". They"
   return $desc.Trim()
 }
 
+# --- Store items ---
+$store = Get-Content -Raw (Join-Path $root "StoreItems.json") | ConvertFrom-Json
+$itemRows = New-Object System.Collections.Generic.List[object]
+foreach ($p in $store.items.PSObject.Properties) {
+  $it = $p.Value
+  $name = if ($it.CustomName) { [string]$it.CustomName } else { [string]$it.DefName }
+  $qty = if ($null -ne $it.QuantityLimit) { [int]$it.QuantityLimit } else { 0 }
+  [void]$itemRows.Add(@(
+    [string]$it.Category,
+    $name,
+    [string]$it.DefName,
+    [int]$it.BasePrice,
+    $qty,
+    [int][bool]$it.IsUsable,
+    [int][bool]$it.IsEquippable,
+    [int][bool]$it.IsWearable,
+    [string]$it.Mod,
+    [int][bool]$it.Enabled
+  ))
+}
+Write-JsonRows "items" $itemRows
+Write-Host ("Wrote web/public/data/items.json ({0} items)" -f $itemRows.Count)
+
 # --- Traits ---
-# Row: [name, defName, degree, addPrice, removePrice, canAdd, canRemove, bypassLimit, mod, modActive, statsJoined, description]
 $traits = Get-Content -Raw (Join-Path $root "Traits.json") | ConvertFrom-Json
-$traitRows = New-Object System.Collections.Generic.List[string]
+$traitRows = New-Object System.Collections.Generic.List[object]
 foreach ($p in $traits.PSObject.Properties) {
   $t = $p.Value
   $stats = @()
   if ($t.Stats) { $stats = @($t.Stats | ForEach-Object { [string]$_ }) }
-  $statsJoined = ($stats -join "; ")
-  $name = Js-Escape ([string]$t.Name)
-  $def = Js-Escape ([string]$t.DefName)
-  $mod = Js-Escape ([string]$t.ModSource)
-  $statsEsc = Js-Escape $statsJoined
-  $descEsc = Js-Escape (Normalize-TraitDescription ([string]$t.Description))
-  $degree = [int]$t.Degree
-  $add = [int]$t.AddPrice
-  $rem = [int]$t.RemovePrice
-  $row = "[`"$name`",`"$def`",$degree,$add,$rem,$(Js-Bool $t.CanAdd),$(Js-Bool $t.CanRemove),$(Js-Bool $t.BypassLimit),`"$mod`",$(Js-Bool $t.modactive),`"$statsEsc`",`"$descEsc`"]"
-  [void]$traitRows.Add($row)
+  [void]$traitRows.Add(@(
+    [string]$t.Name,
+    [string]$t.DefName,
+    [int]$t.Degree,
+    [int]$t.AddPrice,
+    [int]$t.RemovePrice,
+    [bool]$t.CanAdd,
+    [bool]$t.CanRemove,
+    [bool]$t.BypassLimit,
+    [string]$t.ModSource,
+    [bool]$t.modactive,
+    ($stats -join "; "),
+    (Normalize-TraitDescription ([string]$t.Description))
+  ))
 }
-$traitsJs = "const TRAITS = [`n" + ($traitRows -join ",`n") + "`n];`n"
-Write-Utf8NoBom (Join-Path $root "docs\traits-data.js") $traitsJs
+Write-JsonRows "traits" $traitRows
+Write-Host ("Wrote web/public/data/traits.json ({0} traits)" -f $traitRows.Count)
 
 # --- Xenotypes ---
-# Row: [raceDisplayName, raceDef, xenotype, price, xenotypeEnabled, raceEnabled, modActive]
 $races = Get-Content -Raw (Join-Path $root "RaceSettings.json") | ConvertFrom-Json
-$xenoRows = New-Object System.Collections.Generic.List[string]
+$xenoRows = New-Object System.Collections.Generic.List[object]
 foreach ($rp in $races.PSObject.Properties) {
-  $raceDef = Js-Escape $rp.Name
   $r = $rp.Value
-  $display = Js-Escape ([string]$r.DisplayName)
   $raceEnabled = [bool]$r.Enabled
   $modActive = [bool]$r.ModActive
   if (-not $r.XenotypePrices) { continue }
   foreach ($xp in $r.XenotypePrices.PSObject.Properties) {
-    $xeno = Js-Escape $xp.Name
-    $price = [double]$xp.Value
     $xEnabled = $false
     if ($r.EnabledXenotypes -and ($r.EnabledXenotypes.PSObject.Properties.Name -contains $xp.Name)) {
       $xEnabled = [bool]$r.EnabledXenotypes.($xp.Name)
     }
-    $row = "[`"$display`",`"$raceDef`",`"$xeno`",$price,$(Js-Bool $xEnabled),$(Js-Bool $raceEnabled),$(Js-Bool $modActive)]"
-    [void]$xenoRows.Add($row)
+    [void]$xenoRows.Add(@(
+      [string]$r.DisplayName,
+      [string]$rp.Name,
+      [string]$xp.Name,
+      [double]$xp.Value,
+      [bool]$xEnabled,
+      [bool]$raceEnabled,
+      [bool]$modActive
+    ))
   }
 }
-$xenoJs = "const XENOTYPES = [`n" + ($xenoRows -join ",`n") + "`n];`n"
-Write-Utf8NoBom (Join-Path $root "docs\xenotypes-data.js") $xenoJs
+Write-JsonRows "xenotypes" $xenoRows
+Write-Host ("Wrote web/public/data/xenotypes.json ({0} xenotype entries)" -f $xenoRows.Count)
 
 # --- Incidents ---
-# Row: [label, defName, category, baseCost, karmaType, eventCap, enabled, mod, modActive, isRaid, isDisease, isQuest, isWeatherIncident, availableForCommands]
 $incidents = Get-Content -Raw (Join-Path $root "Incidents.json") | ConvertFrom-Json
-$incidentRows = New-Object System.Collections.Generic.List[string]
+$incidentRows = New-Object System.Collections.Generic.List[object]
 foreach ($p in $incidents.PSObject.Properties) {
   $i = $p.Value
-  $label = Js-Escape ([string]$i.Label)
-  $def = Js-Escape ([string]$i.DefName)
-  $cat = Js-Escape ([string]$i.CategoryName)
-  $karma = Js-Escape ([string]$i.KarmaType)
-  $mod = Js-Escape ([string]$i.ModSource)
-  $cost = [int]$i.BaseCost
-  $cap = [int]$i.EventCap
-  $row = "[`"$label`",`"$def`",`"$cat`",$cost,`"$karma`",$cap,$(Js-Bool $i.Enabled),`"$mod`",$(Js-Bool $i.modactive),$(Js-Bool $i.IsRaidIncident),$(Js-Bool $i.IsDiseaseIncident),$(Js-Bool $i.IsQuestIncident),$(Js-Bool $i.IsWeatherIncident),$(Js-Bool $i.IsAvailableForCommands)]"
-  [void]$incidentRows.Add($row)
+  [void]$incidentRows.Add(@(
+    [string]$i.Label,
+    [string]$i.DefName,
+    [string]$i.CategoryName,
+    [int]$i.BaseCost,
+    [string]$i.KarmaType,
+    [int]$i.EventCap,
+    [bool]$i.Enabled,
+    [string]$i.ModSource,
+    [bool]$i.modactive,
+    [bool]$i.IsRaidIncident,
+    [bool]$i.IsDiseaseIncident,
+    [bool]$i.IsQuestIncident,
+    [bool]$i.IsWeatherIncident,
+    [bool]$i.IsAvailableForCommands
+  ))
 }
-$incidentsJs = "const INCIDENTS = [`n" + ($incidentRows -join ",`n") + "`n];`n"
-Write-Utf8NoBom (Join-Path $root "docs\incidents-data.js") $incidentsJs
+Write-JsonRows "incidents" $incidentRows
+Write-Host ("Wrote web/public/data/incidents.json ({0} incidents)" -f $incidentRows.Count)
 
 # --- Weather ---
-# Row: [label, defName, baseCost, karmaType, eventCap, enabled, mod, modActive]
 $weather = Get-Content -Raw (Join-Path $root "Weather.json") | ConvertFrom-Json
-$weatherRows = New-Object System.Collections.Generic.List[string]
+$weatherRows = New-Object System.Collections.Generic.List[object]
 foreach ($p in $weather.PSObject.Properties) {
   $w = $p.Value
-  $label = Js-Escape ([string]$w.Label)
-  $def = Js-Escape ([string]$w.DefName)
-  $karma = Js-Escape ([string]$w.KarmaType)
-  $mod = Js-Escape ([string]$w.ModSource)
-  $cost = [int]$w.BaseCost
-  $cap = [int]$w.EventCap
-  $row = "[`"$label`",`"$def`",$cost,`"$karma`",$cap,$(Js-Bool $w.Enabled),`"$mod`",$(Js-Bool $w.modactive)]"
-  [void]$weatherRows.Add($row)
+  [void]$weatherRows.Add(@(
+    [string]$w.Label,
+    [string]$w.DefName,
+    [int]$w.BaseCost,
+    [string]$w.KarmaType,
+    [int]$w.EventCap,
+    [bool]$w.Enabled,
+    [string]$w.ModSource,
+    [bool]$w.modactive
+  ))
 }
-$weatherJs = "const WEATHER = [`n" + ($weatherRows -join ",`n") + "`n];`n"
-Write-Utf8NoBom (Join-Path $root "docs\weather-data.js") $weatherJs
+Write-JsonRows "weather" $weatherRows
+Write-Host ("Wrote web/public/data/weather.json ({0} weather types)" -f $weatherRows.Count)
 
-# --- Backstories (read-only catalog from Backstories.json) ---
-# Row: [title, defName, slot, titleShort, skillsJoined, workDisablesJoined, categoriesJoined, shuffleable, mod, description]
+# --- Backstories ---
 $backstoryPath = Join-Path $root "Backstories.json"
 if (Test-Path $backstoryPath) {
   $backstories = Get-Content -Raw $backstoryPath | ConvertFrom-Json
-  $bsRows = New-Object System.Collections.Generic.List[string]
-  $items = $backstories.items
-  foreach ($p in $items.PSObject.Properties) {
+  $bsRows = New-Object System.Collections.Generic.List[object]
+  foreach ($p in $backstories.items.PSObject.Properties) {
     $b = $p.Value
-    $title = Js-Escape ([string]$b.Title)
-    $def = Js-Escape ([string]$b.DefName)
-    $slot = Js-Escape ([string]$b.Slot)
-    $short = Js-Escape ([string]$b.TitleShort)
-    $skills = Js-Escape ([string]$b.SkillGainsJoined)
-    $work = Js-Escape ((@($b.WorkDisables) | Where-Object { $_ }) -join ", ")
-    $cats = Js-Escape ((@($b.SpawnCategories) | Where-Object { $_ }) -join ", ")
-    $mod = Js-Escape ([string]$b.ModSource)
-    $desc = Js-Escape ([string]$b.Description)
-    $row = "[`"$title`",`"$def`",`"$slot`",`"$short`",`"$skills`",`"$work`",`"$cats`",$(Js-Bool $b.Shuffleable),`"$mod`",`"$desc`"]"
-    [void]$bsRows.Add($row)
+    $work = ((@($b.WorkDisables) | Where-Object { $_ }) -join ", ")
+    $cats = ((@($b.SpawnCategories) | Where-Object { $_ }) -join ", ")
+    [void]$bsRows.Add(@(
+      [string]$b.Title,
+      [string]$b.DefName,
+      [string]$b.Slot,
+      [string]$b.TitleShort,
+      [string]$b.SkillGainsJoined,
+      $work,
+      $cats,
+      [bool]$b.Shuffleable,
+      [string]$b.ModSource,
+      [string]$b.Description
+    ))
   }
-  $bsJs = "const BACKSTORIES = [`n" + ($bsRows -join ",`n") + "`n];`n"
-  Write-Utf8NoBom (Join-Path $root "docs\backstories-data.js") $bsJs
-  Write-Host ("Wrote docs/backstories-data.js ({0} backstories)" -f $bsRows.Count)
+  Write-JsonRows "backstories" $bsRows
+  Write-Host ("Wrote web/public/data/backstories.json ({0} backstories)" -f $bsRows.Count)
 } else {
-  Write-Host "Skip backstories-data.js (Backstories.json not found - run scripts/export-backstories.ps1)"
+  Write-Host "Skip backstories.json (Backstories.json not found - run scripts/export-backstories.ps1)"
 }
-
-Write-Host ("Wrote docs/traits-data.js ({0} traits)" -f $traitRows.Count)
-Write-Host ("Wrote docs/xenotypes-data.js ({0} xenotype entries)" -f $xenoRows.Count)
-Write-Host ("Wrote docs/incidents-data.js ({0} incidents)" -f $incidentRows.Count)
-Write-Host ("Wrote docs/weather-data.js ({0} weather types)" -f $weatherRows.Count)

@@ -3,3 +3,6 @@ viewers.json
 
 # Mod-generated backups
 Backups/
+
+# Vue app
+web/node_modules/
