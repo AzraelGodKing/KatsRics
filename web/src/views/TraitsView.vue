@@ -137,6 +137,7 @@ const filteredXenos = computed(() => {
 <template>
   <div class="page-shell">
     <PageIntro
+      kicker="Channel 02"
       title="Traits & Xenotypes"
       lede="Pawn traits and xenotype prices from the live CAP ChatInteractive config — including what each trait does."
       :stats="stats"

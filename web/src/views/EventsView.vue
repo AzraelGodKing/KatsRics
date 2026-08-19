@@ -144,7 +144,7 @@ const filteredWeather = computed(() => {
 
 <template>
   <div class="page-shell">
-    <PageIntro title="Events & Weather" lede="Incidents and weather you can trigger with chat coins." :stats="stats">
+    <PageIntro kicker="Channel 04" title="Events & Weather" lede="Incidents and weather you can trigger with chat coins." :stats="stats">
       <template v-if="tab === 'incidents'">
         Trigger with <code>!event &lt;event_name&gt;</code> (e.g. <code>!event ambush</code>).
         Look up prices with <code>!lookup event &lt;name&gt;</code>.

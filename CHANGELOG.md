@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-19 — New orbit-terminal site look
+
+- Replaced the brown ledger UI with a void/cyan broadcast layout: sticky side rail, metric cards, pill filters, mono prices.
+- Light theme is cool paper/navy instead of parchment.
+- Same catalog routes and filters; visual system only.
+
 ## 2026-08-19 — Vue 3 catalog app
 
 - Rebuilt the GitHub Pages site as a Vue 3 + Vite SPA (`web/`), still published from `docs/`.
