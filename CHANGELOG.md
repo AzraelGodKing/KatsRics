@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-08-28 — StoreItems flag / availability refresh
+
+- Updated `StoreItems.json` from a fresh CAP export (same 5,420 items; base prices unchanged vs prior sync).
+- Catalog deltas are mostly availability and command flags: Enabled flips, plus USE / EQUIP / WEAR changes.
+- Regenerated `web/public/data/items.json` and `docs/data/items.json`.
+
 ## 2026-08-28 — CAP ChatInteractive data refresh
 
 - Synced live CAP export: ActiveMods, CommandSettings, Incidents, RaceSettings, StoreItems, Traits, Weather.
