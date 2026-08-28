@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-28 — CAP ChatInteractive data refresh
+
+- Synced live CAP export: ActiveMods, CommandSettings, Incidents, RaceSettings, StoreItems, Traits, Weather.
+- Regenerated Vue catalog JSON and rebuilt `docs/`.
+- Catalog growth vs prior export: store **3,704 → 5,420** items; traits **137 → 165**; xenotype prices **294 → 1,446**; incidents **226 → 254**; weather **22 → 35**.
+- Left `viewers.json` and `Backups/` out of git. Backstories unchanged (still from prior RimWorld scrape).
+
 ## 2026-08-19 — New orbit-terminal site look
 
 - Replaced the brown ledger UI with a void/cyan broadcast layout: sticky side rail, metric cards, pill filters, mono prices.
