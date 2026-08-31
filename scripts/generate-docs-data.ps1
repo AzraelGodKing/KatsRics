@@ -1,7 +1,9 @@
 # Generates Vue catalog JSON under web/public/data/:
-#   items.json, traits.json, xenotypes.json, incidents.json, weather.json, backstories.json
+#   items.json, traits.json, xenotypes.json, incidents.json, weather.json, backstories.json,
+#   commands.json, addon-commands.json
 # Usage (from repo root): powershell -NoProfile -File scripts/generate-docs-data.ps1
 # Backstories.json is produced by: powershell -NoProfile -File scripts/export-backstories.ps1
+# Isekai JSON is produced by: powershell -NoProfile -File scripts/generate-isekai-data.ps1
 
 $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
@@ -216,3 +218,65 @@ if (Test-Path $backstoryPath) {
 } else {
   Write-Host "Skip backstories.json (Backstories.json not found - run scripts/export-backstories.ps1)"
 }
+
+# --- RICS Commands ---
+# Row: [key, label, description, permission, cost, cooldown, enabled, supportsCost, alias]
+$cmds = Get-Content -Raw (Join-Path $root "CommandSettings.json") | ConvertFrom-Json
+$cmdRows = New-Object System.Collections.Generic.List[object]
+foreach ($p in $cmds.PSObject.Properties) {
+  $c = $p.Value
+  [void]$cmdRows.Add(@(
+    [string]$p.Name,
+    [string]$c.Label,
+    [string]$c.CommandDescription,
+    [string]$c.PermissionLevel,
+    [int]$c.Cost,
+    [int]$c.CooldownSeconds,
+    [bool]$c.Enabled,
+    [bool]$c.SupportsCost,
+    [string]$c.CommandAlias
+  ))
+}
+Write-JsonRows "commands" $cmdRows
+Write-Host ("Wrote web/public/data/commands.json ({0} commands)" -f $cmdRows.Count)
+
+# --- Addon commands (curated; RICS Addon workshop 3760183125 not always installed locally) ---
+# Row: [key, usage, description, integration]
+$addonRows = @(
+  @("zone", "!zone", "Look and change pawn zones", "General"),
+  @("pickup", "!pickup", "Interact with items by picking, using, equipping, wearing and dropping", "General"),
+  @("work", "!work", "Force your pawn to work a certain job", "General"),
+  @("draft", "!draft", "Draft and undraft your pawn", "General"),
+  @("position", "!position", "Save positions for later use with !move", "General"),
+  @("move", "!move", "Move your pawn", "General"),
+  @("gizmo", "!gizmo", "Activate certain pawn skills/gear (e.g. firefoam poppacks)", "General"),
+  @("medpolicy", "!medpolicy", "Change pawn medicine assignment", "General"),
+  @("hostility", "!hostility", "Change pawn hostility response (flee, attack, or ignore)", "General"),
+  @("attack", "!attack", "Select a pawn to attack", "General"),
+  @("sethead", "!sethead", "Change head", "Pawn Customization"),
+  @("setbody", "!setbody", "Change body", "Pawn Customization"),
+  @("sethair", "!sethair", "Change hair", "Pawn Customization"),
+  @("setbeard", "!setbeard", "Change beard", "Pawn Customization"),
+  @("dyehair", "!dyehair", "Dye hair", "Pawn Customization"),
+  @("settattoo", "!settattoo", "Change tattoos", "Pawn Customization"),
+  @("setskin", "!setskin", "Choose skin color", "Pawn Customization"),
+  @("setstyle", "!setstyle", "Choose ideology style for gear", "Pawn Customization"),
+  @("harcosmetic", "!harcosmetic", "Tweak HAR pawn cosmetics (e.g. horns)", "Pawn Customization"),
+  @("geneedit", "!geneedit", "Add genes or change xenotype", "Pawn Customization"),
+  @("expertise", "!expertise", "View and choose expertise", "Vanilla Expanded Skills"),
+  @("mages", "!mages", "List mages in the colony", "RimWorld of Magic"),
+  @("fighters", "!fighters", "List fighters in the colony", "RimWorld of Magic"),
+  @("class", "!class", "View your class", "RimWorld of Magic"),
+  @("spendpoints", "!spendpoints", "Assign level points to spells and skills", "RimWorld of Magic"),
+  @("spells", "!spells", "View your spells and skills", "RimWorld of Magic"),
+  @("cast", "!cast", "Cast your spells and skills", "RimWorld of Magic"),
+  @("autocast", "!autocast", "Toggle autocasts", "RimWorld of Magic"),
+  @("sidearms", "!sidearms", "View, equip, and drop sidearms", "Simple Sidearms"),
+  @("isekai", "!isekai", 'View, level stats, and choose aura - e.g. !isekai level "stat" "amount"', "ISEKAI RPG LEVELING"),
+  @("constellation", "!constellation", "Choose and level isekai class / path / nodes - unlock -> path -> learn", "ISEKAI RPG LEVELING"),
+  @("autocombat", "!autocombat", "Turn Search and Destroy autocombat on/off", "Search and Destroy"),
+  @("facialanimation", "!facialanimation", "Change face parts", "NL Facial Animation"),
+  @("layered", "!layered", "Manage cosmetic apparel", "Layered Apparel")
+)
+Write-JsonRows "addon-commands" $addonRows
+Write-Host ("Wrote web/public/data/addon-commands.json ({0} addon commands)" -f $addonRows.Count)
