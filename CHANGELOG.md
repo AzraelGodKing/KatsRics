@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-08-31 — Commands & Isekai pages (Vue)
+
+- Added Commands route (`#/commands`): RICS Core from `CommandSettings.json` plus curated Addon + Isekai commands.
+- Added Isekai route (`#/isekai`): 6 stats, 12 classes (with gimmicks), constellation keystones from ISEKAI RPG LEVELING.
+- Generators emit `web/public/data/commands.json`, `addon-commands.json`, and Isekai JSON (`scripts/generate-isekai-data.ps1`).
+- Side rail links for Commands and Isekai; legacy `commands.html` / `isekai.html` redirect into the SPA.
+
 ## 2026-08-28 — StoreItems flag / availability refresh
 
 - Updated `StoreItems.json` from a fresh CAP export (same 5,420 items; base prices unchanged vs prior sync).
