@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-10 — CAP ChatInteractive data refresh
+
+- Synced live CAP export: ActiveMods, CommandSettings, Incidents, RaceSettings, StoreItems, Traits, Weather.
+- Regenerated Vue catalog JSON and rebuilt `docs/`.
+- Catalog deltas vs prior export: store **5,420 → 5,468** items (purchasable **3,040 → 2,922**); traits **165 → 354** (large jump from ISEKAI RPG LEVELING traits); weather **35 → 36**; incidents/commands/xenotype prices unchanged (**254** / **112** / **1,446**).
+- Left `viewers.json` and `Backups/` out of git. Backstories unchanged.
+
 ## 2026-08-31 — Commands & Isekai pages (Vue)
 
 - Added Commands route (`#/commands`): RICS Core from `CommandSettings.json` plus curated Addon + Isekai commands.

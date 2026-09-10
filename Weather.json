@@ -418,5 +418,17 @@
     "ModSource": "InterRim Ballistic Missile",
     "modactive": false,
     "Version": 1
+  },
+  "AB_ReddishRain": {
+    "DefName": "AB_ReddishRain",
+    "Label": "reddish rain",
+    "Description": "Periodic blooms of airborne red algae cause rain to fall in unsettling shades of pink and crimson, as though the skies themselves were bleeding.",
+    "BaseCost": 150,
+    "KarmaType": "Neutral",
+    "EventCap": 3,
+    "Enabled": false,
+    "ModSource": "Alpha Biomes",
+    "modactive": true,
+    "Version": 1
   }
 }
