@@ -6,3 +6,6 @@ Backups/
 
 # Vue app
 web/node_modules/
+
+# Local toolchain (portable Node for builds)
+.tools/

@@ -272,7 +272,7 @@
   "Kurin_Race": {
     "DisplayName": "Kurin",
     "Enabled": false,
-    "ModActive": true,
+    "ModActive": false,
     "BasePrice": 0,
     "MinAge": 16,
     "MaxAge": 65,
@@ -4366,7 +4366,7 @@
   "MeowKurin": {
     "DisplayName": "Kurin",
     "Enabled": false,
-    "ModActive": true,
+    "ModActive": false,
     "BasePrice": 2000,
     "MinAge": 16,
     "MaxAge": 65,

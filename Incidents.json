@@ -4859,7 +4859,7 @@
     "CooldownDays": 0,
     "UsesPerCooldownPeriod": 1,
     "ModSource": "Kurin HAR Edition",
-    "modactive": true,
+    "modactive": false,
     "Version": 1,
     "IsWeatherIncident": false,
     "IsRaidIncident": false,
