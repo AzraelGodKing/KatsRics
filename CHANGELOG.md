@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-09-12 — Genes browser
+
+- Added Genes route (`#/genes`): searchable catalog of Biotech (+ active-mod) genes with category, complexity / metabolism / archite biostats, and an estimated `!geneedit` coin cost.
+- Added `scripts/export-genes.ps1` (scrapes `GeneDef` / expands Skill & Chemical `GeneTemplateDef`s into `Genes.json`).
+- Extended `scripts/generate-docs-data.ps1` to emit `web/public/data/genes.json`; legacy `genes.html` redirects into the SPA.
+- Side rail link for Genes. Reference-only — chat still uses `!geneedit`, not buy-by-name.
+
 ## 2026-09-10 — CAP ChatInteractive data refresh
 
 - Synced live CAP export: ActiveMods, CommandSettings, Incidents, RaceSettings, StoreItems, Traits, Weather.

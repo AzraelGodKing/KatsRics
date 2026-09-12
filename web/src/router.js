@@ -5,6 +5,7 @@ import BackstoriesView from "./views/BackstoriesView.vue";
 import EventsView from "./views/EventsView.vue";
 import CommandsView from "./views/CommandsView.vue";
 import IsekaiView from "./views/IsekaiView.vue";
+import GenesView from "./views/GenesView.vue";
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -15,6 +16,7 @@ const router = createRouter({
     { path: "/events", name: "events", component: EventsView, meta: { title: "Events" } },
     { path: "/commands", name: "commands", component: CommandsView, meta: { title: "Commands" } },
     { path: "/isekai", name: "isekai", component: IsekaiView, meta: { title: "Isekai" } },
+    { path: "/genes", name: "genes", component: GenesView, meta: { title: "Genes" } },
     { path: "/:pathMatch(.*)*", redirect: "/" },
   ],
   scrollBehavior() {

@@ -1,8 +1,9 @@
 # Generates Vue catalog JSON under web/public/data/:
 #   items.json, traits.json, xenotypes.json, incidents.json, weather.json, backstories.json,
-#   commands.json, addon-commands.json
+#   genes.json, commands.json, addon-commands.json
 # Usage (from repo root): powershell -NoProfile -File scripts/generate-docs-data.ps1
 # Backstories.json is produced by: powershell -NoProfile -File scripts/export-backstories.ps1
+# Genes.json is produced by: powershell -NoProfile -File scripts/export-genes.ps1
 # Isekai JSON is produced by: powershell -NoProfile -File scripts/generate-isekai-data.ps1
 
 $ErrorActionPreference = "Stop"
@@ -217,6 +218,34 @@ if (Test-Path $backstoryPath) {
   Write-Host ("Wrote web/public/data/backstories.json ({0} backstories)" -f $bsRows.Count)
 } else {
   Write-Host "Skip backstories.json (Backstories.json not found - run scripts/export-backstories.ps1)"
+}
+
+# --- Genes ---
+$genePath = Join-Path $root "Genes.json"
+if (Test-Path $genePath) {
+  $genes = Get-Content -Raw $genePath | ConvertFrom-Json
+  $geneRows = New-Object System.Collections.Generic.List[object]
+  foreach ($p in $genes.items.PSObject.Properties) {
+    $g = $p.Value
+    $catLabel = if ($g.DisplayCategoryLabel) { [string]$g.DisplayCategoryLabel } else { [string]$g.DisplayCategory }
+    [void]$geneRows.Add(@(
+      [string]$g.Label,
+      [string]$g.DefName,
+      $catLabel,
+      [string]$g.DisplayCategory,
+      [int]$g.BiostatCpx,
+      [int]$g.BiostatMet,
+      [int]$g.BiostatArc,
+      [double]$g.MarketValueFactor,
+      [bool]$g.FromTemplate,
+      [string]$g.ModSource,
+      [string]$g.Description
+    ))
+  }
+  Write-JsonRows "genes" $geneRows
+  Write-Host ("Wrote web/public/data/genes.json ({0} genes)" -f $geneRows.Count)
+} else {
+  Write-Host "Skip genes.json (Genes.json not found - run scripts/export-genes.ps1)"
 }
 
 # --- RICS Commands ---
