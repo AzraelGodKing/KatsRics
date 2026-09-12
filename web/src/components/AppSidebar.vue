@@ -18,6 +18,7 @@ const links = [
   { to: "/events", label: "Events", code: "04", match: "events" },
   { to: "/commands", label: "Commands", code: "05", match: "commands" },
   { to: "/isekai", label: "Isekai", code: "06", match: "isekai" },
+  { to: "/genes", label: "Genes", code: "07", match: "genes" },
 ];
 
 const isDark = computed(() => theme.value === "dark");
